@@ -10,4 +10,5 @@ The present study features three experiments that directly compare variability a
 The overarching goal is to understand how listeners use acoustic-phonetic information to accommodate linguistic variation.
 
 This repository contains a markdown with the full model outputs from all three experiments.
+You can view the html output by clicking [this link](https://html-preview.github.io/?url=https://github.com/hollzzar/diss_study_1/blob/main/adaptation_analyses.html).
 Eventually, it will also contain the pre-print of the manuscript once it is accepted for publication, as well as the code used to generate the manuscript with R Markdown.
