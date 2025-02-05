@@ -1,0 +1,1160 @@
+---
+title: "The effects of variability and similarity on talker-independent adaptation to Spanish-accented English: Full model outputs"
+author: Holly A. Zaharchuk and Janet G. van Hell
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+# Set up session
+
+```{r setup_2}
+# Source packages, datasets, etc.
+source("/Users/hollyzaharchuk/Mirror/dissertation/16_jml/sections/code/0_load_behave.R")
+```
+
+# Experiment 1: Investigating differences in generalization from exposure to Spanish-accented stops versus fricatives
+
+## Exposure: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r exp_1_1}
+# Filter and factor
+dat_exp_1 <- dat_exp_filt %>%
+  dplyr::filter(version == "1a") %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1])
+
+# Add contrasts
+contrasts(dat_exp_1$cond_sim) <- contrast_sim_1a
+contrasts(dat_exp_1$cond_var) <- contrast_var
+contrasts(dat_exp_1$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_1_2, cache = TRUE}
+# Run
+exp_acc_1 <- glmer(resp_acc ~ cond_var*cond_sim*type +
+                      trial_cent + freq_cent + vot_cent +
+                      (1|stim) + (1|participant),
+                    data = dat_exp_1,
+                    family = binomial,
+                    control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(exp_acc_1)
+```
+
+### Test effects
+
+```{r exp_1_3}
+# Test effects
+exp_acc_1_comp <- Anova(exp_acc_1, test = "Chi", type = "III")
+
+# Show
+exp_acc_1_comp
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_1_4}
+# Get means
+exp_acc_1_means <- emmeans(exp_acc_1, ~ cond_var*cond_sim*type)
+
+# Show
+exp_acc_1_means %>% summary(type = "response")
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_1_5}
+# Contrasts by Variability
+exp_acc_1_cont_var <- pairs(exp_acc_1_means, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_1_cont_var
+
+# Contrasts by Similarity
+exp_acc_1_cont_sim <- pairs(exp_acc_1_means, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_1_cont_sim
+```
+
+## Exposure: RT
+
+### Filter, factor, and scale variables
+
+```{r exp_1_6}
+# Filter and factor
+dat_exp_1_rt <- dat_exp_rt %>%
+  dplyr::filter(version == "1a") %>%
+  left_join(tab_factor_1a, by = c("cond_var", "cond_sim")) %>%
+  left_join(tab_type, by = c("type")) %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1]) 
+
+# Add contrasts
+contrasts(dat_exp_1_rt$cond_sim) <- contrast_sim_1a
+contrasts(dat_exp_1_rt$cond_var) <- contrast_var
+contrasts(dat_exp_1_rt$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_1_7, cache = TRUE}
+# Run
+exp_rt_1 <- lmer(inv_rt ~ cond_var*cond_sim*type + 
+                    trial_cent + freq_cent + vot_cent +
+                    (1|stim) + (1|participant),
+                  data = dat_exp_1_rt)
+
+# Show
+summary(exp_rt_1)
+```
+
+### Test effects
+
+```{r exp_1_8}
+# Test effects
+exp_rt_1_comp <- Anova(exp_rt_1, test = "Chi", type = "III")
+
+# Show
+exp_rt_1_comp
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_1_9}
+# Means
+exp_rt_1_means <- emmeans(exp_rt_1, ~ cond_var*cond_sim*type)
+
+# Show
+exp_rt_1_means %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_1_10}
+# Contrasts by Variability
+exp_rt_1_cont_var <- pairs(exp_rt_1_means, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_1_cont_var
+
+# Contrasts by Similarity
+exp_rt_1_cont_sim <- pairs(exp_rt_1_means, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_1_cont_sim
+```
+
+## Test 1: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r test_1_1}
+# Filter and factor
+dat_test_1 <- dat_test_filt %>%
+  dplyr::filter(version %in% c("1a", "1c")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp_1a, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_1$cond_exp_fac) <- contrast_train_1a
+contrasts(dat_test_1$match_type) <- contrast_match_1
+```
+
+### Run model
+
+```{r test_1_2, cache = TRUE}
+# Run
+test_acc_1_train <- glmer(resp_acc ~ cond_exp_fac*match_type + 
+                             trial_cent + freq_prime_cent:freq_target_cent + 
+                             vot_cent +
+                             (1|prime:target) + (1|participant),
+                           data = dat_test_1,
+                           family = binomial,
+                           control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(test_acc_1_train)
+```
+
+### Test effects
+
+```{r test_1_3}
+# Test effects
+test_acc_1_train_comp <- Anova(test_acc_1_train, test = "Chi", type = "III")
+
+# Show
+test_acc_1_train_comp
+```
+
+### Get means: Main effect of Exposure
+
+```{r test_1_4}
+# Across levels of Target
+test_acc_1_train_means_simple <- emmeans(test_acc_1_train, ~ cond_exp_fac)
+
+# Show
+test_acc_1_train_means_simple %>% summary(type = "response")
+```
+
+### Compare means: Main effect of Exposure
+
+```{r test_1_5}
+# Select contrasts with Test-only group
+test_acc_1_train_coef_simple <-
+  emmeans:::pairwise.emmc(levels(test_acc_1_train_means_simple)$cond_exp_fac)
+test_acc_1_train_coef_simple <- test_acc_1_train_coef_simple[c(1:6)]
+
+# Run contrasts
+test_acc_1_train_cont_simple <- contrast(test_acc_1_train_means_simple,
+                                          test_acc_1_train_coef_simple, 
+                                          adj = "hommel")
+
+# Show
+summary(test_acc_1_train_cont_simple)
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_1_6}
+# By levels of Target
+test_acc_1_train_means <- emmeans(test_acc_1_train, ~ cond_exp_fac*match_type)
+
+# Show
+test_acc_1_train_means %>% summary(type = "response")
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_1_7}
+# Select contrasts with Test-only group
+test_acc_1_train_coef <- emmeans:::pairwise.emmc(levels(test_acc_1_train_means)$cond_exp_fac)
+test_acc_1_train_coef_1 <- test_acc_1_train_coef[c(1:6)]
+
+
+# Run contrasts
+test_acc_1_train_cont_1 <- contrast(test_acc_1_train_means, 
+                                   test_acc_1_train_coef_1, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_acc_1_train_cont_1
+
+# Select contrasts without Test-only group
+test_acc_1_train_coef_2 <- test_acc_1_train_coef[c(7:21)]
+
+# Run contrasts
+test_acc_1_train_cont_2 <- contrast(test_acc_1_train_means, 
+                                   test_acc_1_train_coef_2, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_acc_1_train_cont_2
+```
+
+## Test 1: RT
+
+### Filter, factor, and scale variables
+
+```{r test_1_8}
+# Filter and factor
+dat_test_1_rt <- dat_test_rt %>%
+  dplyr::filter(version %in% c("1a", "1c")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp_1a, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_1_rt$cond_exp_fac) <- contrast_train_1a
+contrasts(dat_test_1_rt$match_type) <- contrast_match_1
+```
+
+### Run model
+
+```{r test_1_9, cache = TRUE}
+# Run
+test_rt_1_train <- lmer(inv_rt ~ cond_exp_fac*match_type + 
+                           trial_cent + freq_prime_cent:freq_target_cent + 
+                           vot_cent +
+                           (1|prime:target) + (1|participant),
+                         data = dat_test_1_rt)
+
+# Show
+summary(test_rt_1_train)
+```
+
+### Test effects
+
+```{r test_1_10}
+# Test effects
+test_rt_1_train_comp <- Anova(test_rt_1_train, test = "Chi", type = "III")
+
+# Show
+test_rt_1_train_comp
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_1_11}
+# Get means
+test_rt_1_train_means <- emmeans(test_rt_1_train, ~ cond_exp_fac*match_type)
+
+# Show
+test_rt_1_train_means %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_1_12}
+# Select contrasts with Test-only group
+test_rt_1_train_coef <- emmeans:::pairwise.emmc(levels(test_rt_1_train_means)$cond_exp_fac)
+test_rt_1_train_coef_1 <- test_rt_1_train_coef[c(1:6)]
+
+# Run contrasts
+test_rt_1_train_cont_1 <- contrast(test_rt_1_train_means, 
+                                   test_rt_1_train_coef_1, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_rt_1_train_cont_1
+
+# Select contrasts wtihout Test-only group
+test_rt_1_train_coef_2 <- test_rt_1_train_coef[c(7:21)]
+
+# Run contrasts
+test_rt_1_train_cont_2 <- contrast(test_rt_1_train_means, 
+                                   test_rt_1_train_coef_2, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_rt_1_train_cont_2
+```
+
+# Experiment 2: Investigating the specificity of generalization from exposure to Spanish-accented stops
+
+## Exposure: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r exp_2_1}
+# Filter and factor
+dat_exp_2 <- dat_exp_filt %>%
+  dplyr::filter(version == "1b") %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1])
+
+# Add contrasts
+contrasts(dat_exp_2$cond_sim) <- contrast_sim
+contrasts(dat_exp_2$cond_var) <- contrast_var
+contrasts(dat_exp_2$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_2_2, cache = TRUE}
+# Run
+exp_acc_2 <- glmer(resp_acc ~ cond_var*cond_sim*type + 
+                      trial_cent + freq_cent + vot_cent +
+                      (1|stim) + (cond_var*cond_sim|participant),
+                    data = dat_exp_2,
+                    family = binomial,
+                    control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(exp_acc_2)
+```
+
+### Test effects
+
+```{r exp_2_3}
+# Test effects
+exp_acc_2_comp <- Anova(exp_acc_2, test = "Chi", type = "III")
+
+# Show
+exp_acc_2_comp
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_2_4}
+# Get means
+exp_acc_2_means <- emmeans(exp_acc_2, ~ cond_var*cond_sim*type)
+
+# Show
+exp_acc_2_means %>% summary(type = "response")
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_2_5}
+# Contrasts by Variability
+exp_acc_2_cont_var <- pairs(exp_acc_2_means, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_2_cont_var
+
+# Contrasts by Similarity
+exp_acc_2_cont_sim <- pairs(exp_acc_2_means, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_2_cont_sim
+```
+
+## Exposure: RT
+
+### Filter, factor, and scale variables
+
+```{r exp_2_6}
+# Filter and factor
+dat_exp_2_rt <- dat_exp_rt %>%
+  dplyr::filter(version == "1b") %>%
+  left_join(tab_factor, by = c("cond_var", "cond_sim")) %>%
+  left_join(tab_type, by = c("type")) %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1])
+
+# Add contrasts
+contrasts(dat_exp_2_rt$cond_sim) <- contrast_sim
+contrasts(dat_exp_2_rt$cond_var) <- contrast_var
+contrasts(dat_exp_2_rt$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_2_7, cache = TRUE}
+# Run
+exp_rt_2 <- lmer(inv_rt ~ cond_var*cond_sim*type + 
+                    trial_cent + freq_cent + vot_cent +
+                    (1|stim) + (1|participant),
+                  data = dat_exp_2_rt)
+
+# Show
+summary(exp_rt_2)
+```
+
+### Test effects
+
+```{r exp_2_8}
+# Test effects
+exp_rt_2_comp <- Anova(exp_rt_2, test = "Chi", type = "III")
+
+# Show
+exp_rt_2_comp
+```
+
+### Get means: Variabilty x Word type interaction
+
+```{r exp_2_9}
+# Means
+exp_rt_2_means_2 <- emmeans(exp_rt_2, ~ cond_var*type)
+
+# Show
+exp_rt_2_means_2 %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Variabilty x Word type interaction
+
+```{r exp_2_10}
+# Contrasts by Variability
+exp_rt_2_cont_2 <- pairs(exp_rt_2_means_2, 
+                             by = "type", 
+                             adj = "hommel")
+
+# Show
+exp_rt_2_cont_2
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_2_11}
+# Means
+exp_rt_2_means_3 <- emmeans(exp_rt_2, ~ cond_var*cond_sim*type)
+
+# Show
+exp_rt_2_means_3 %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_2_12}
+# Contrasts by Variability
+exp_rt_2_cont_var <- pairs(exp_rt_2_means_3, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_2_cont_var
+
+# Contrasts by Similarity
+exp_rt_2_cont_sim <- pairs(exp_rt_2_means_3, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_2_cont_sim
+```
+
+## Test 1: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r test_2_1}
+# Filter and factor
+dat_test_2 <- dat_test_filt %>%
+  dplyr::filter(version %in% c("1b", "1c")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_2$cond_exp_fac) <- contrast_train
+contrasts(dat_test_2$match_type) <- contrast_match_1
+```
+
+### Run model
+
+```{r test_2_2, cache = TRUE}
+# Run
+test_acc_2_train <- glmer(resp_acc ~ cond_exp_fac*match_type + 
+                       trial_cent + freq_prime_cent:freq_target_cent + 
+                         vot_cent +
+                       (1|prime:target) + (1|participant),
+                     data = dat_test_2,
+                     family = binomial,
+                     control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(test_acc_2_train)
+```
+
+### Test effects
+
+```{r test_2_3}
+# Test effects
+test_acc_2_train_comp <- Anova(test_acc_2_train, test = "Chi", type = "III")
+
+# Format
+test_acc_2_train_comp
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_2_4}
+# Get means
+test_acc_2_train_means <- emmeans(test_acc_2_train, ~ cond_exp_fac*match_type)
+
+# Format
+test_acc_2_train_means %>% summary(type = "response")
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_2_5}
+# Select contrasts for Test-only group
+test_acc_2_train_coef <- emmeans:::pairwise.emmc(levels(test_acc_2_train_means)$cond_exp_fac)
+test_acc_2_train_coef_1 <- test_acc_2_train_coef[c(1:4)]
+
+# Run contrasts
+test_acc_2_train_cont_1 <- contrast(test_acc_2_train_means, 
+                                   test_acc_2_train_coef_1, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_acc_2_train_cont_1
+
+# Select contrasts without Test-only group
+test_acc_2_train_coef_2 <- test_acc_2_train_coef[c(5:10)]
+
+# Run contrasts
+test_acc_2_train_cont_2 <- contrast(test_acc_2_train_means, 
+                                   test_acc_2_train_coef_2, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_acc_2_train_cont_2
+```
+
+## Test 1: RT
+
+### Filter, factor, and scale variables
+
+```{r test_2_6}
+# Filter and factor
+dat_test_2_rt <- dat_test_rt %>%
+  dplyr::filter(version %in% c("1b", "1c")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_2_rt$cond_exp_fac) <- contrast_train
+contrasts(dat_test_2_rt$match_type) <- contrast_match_1
+```
+
+### Run model
+
+```{r test_2_7, cache = TRUE}
+# Run
+test_rt_2_train <- lmer(inv_rt ~ cond_exp_fac*match_type + 
+                           trial_cent + freq_prime_cent:freq_target_cent + 
+                           vot_cent +
+                       (1|prime:target) + (1|participant),
+                     data = dat_test_2_rt)
+
+# Show
+summary(test_rt_2_train)
+```
+
+### Test effects
+
+```{r test_2_8}
+# Test effects
+test_rt_2_train_comp <- Anova(test_rt_2_train, test = "Chi", type = "III")
+
+# Format
+test_rt_2_train_comp
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_2_9}
+# Get means
+test_rt_2_train_means <- emmeans(test_rt_2_train, ~ cond_exp_fac*match_type)
+
+# Show
+test_rt_2_train_means %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_2_10}
+# Select contrasts for Test-only group
+test_rt_2_train_coef <- emmeans:::pairwise.emmc(levels(test_rt_2_train_means)$cond_exp_fac)
+test_rt_2_train_coef_1 <- test_rt_2_train_coef[c(1:4)]
+
+# Run contrasts
+test_rt_2_train_cont_1 <- contrast(test_rt_2_train_means, 
+                                   test_rt_2_train_coef_1, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_rt_2_train_cont_1
+
+# Select contrasts without Test-only group
+test_rt_2_train_coef_2 <- test_rt_2_train_coef[c(5:10)]
+
+test_rt_2_train_cont_2 <- contrast(test_rt_2_train_means, 
+                                   test_rt_2_train_coef_2, 
+                                   by = "match_type",
+                                   adj = "hommel")
+
+# Show
+test_rt_2_train_cont_2
+```
+
+# Experiment 3: Investigating fine-grained perceptual changes from exposure to Spanish-accented stops
+
+## Exposure: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r exp_3_1}
+# Filter and factor
+dat_exp_3 <- dat_exp_filt %>%
+  dplyr::filter(version == "2a") %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1])
+
+# Add contrasts
+contrasts(dat_exp_3$cond_sim) <- contrast_sim
+contrasts(dat_exp_3$cond_var) <- contrast_var
+contrasts(dat_exp_3$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_3_2, cache = TRUE}
+# Run
+exp_acc_3 <- glmer(resp_acc ~ cond_var*cond_sim*type + 
+                     trial_cent + freq_cent + vot_cent +
+                     (1|stim) + (cond_var:cond_sim + cond_var|participant),
+                   data = dat_exp_3,
+                   family = binomial,
+                   control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(exp_acc_3)
+```
+
+### Test effects
+
+```{r exp_3_3}
+# Test effects
+exp_acc_3_comp <- Anova(exp_acc_3, test = "Chi", type = "III")
+
+# Show
+exp_acc_3_comp
+```
+
+### Get means: Variability x Word type interaction
+
+```{r exp_3_4}
+# Get means
+exp_acc_3_means_2 <- emmeans(exp_acc_3, ~ cond_var*type)
+
+# Show
+exp_acc_3_means_2 %>% summary(type = "response")
+```
+
+### Compare means: Variability x Word type interaction
+
+```{r exp_3_5}
+# Run contrasts
+exp_acc_3_cont_2 <- pairs(exp_acc_3_means_2, 
+                          by = "type", 
+                          adjust = "hommel")
+
+# Show
+exp_acc_3_cont_2
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_3_6}
+# Get means
+exp_acc_3_means_3 <- emmeans(exp_acc_3, ~ cond_var*cond_sim*type)
+
+# Show
+exp_acc_3_means_3 %>% summary(type = "response")
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_3_7}
+# Contrasts by Variability
+exp_acc_3_cont_var <- pairs(exp_acc_3_means_3, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_3_cont_var
+
+# Contrasts by Similarity
+exp_acc_3_cont_sim <- pairs(exp_acc_3_means_3, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_acc_3_cont_sim
+```
+
+## Exposure: RT
+
+### Filter, factor, and scale variables
+
+```{r exp_3_8}
+# Filter and factor
+dat_exp_3_rt <- dat_exp_rt %>%
+  dplyr::filter(version == "2a") %>%
+  left_join(tab_factor, by = c("cond_var", "cond_sim")) %>%
+  left_join(tab_type, by = c("type")) %>%
+  mutate(across(.cols = c("participant", "stim", "type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_cent = scale(FreqZipfUS)[,1])
+
+# Add contrasts
+contrasts(dat_exp_3_rt$cond_sim) <- contrast_sim
+contrasts(dat_exp_3_rt$cond_var) <- contrast_var
+contrasts(dat_exp_3_rt$type) <- contrast_type
+```
+
+### Run model
+
+```{r exp_3_9, cache = TRUE}
+# Run
+exp_rt_3 <- lmer(inv_rt ~ cond_var*cond_sim*type + 
+                   trial_cent + freq_cent + vot_cent +
+                   (1|stim) + (1|participant),
+                 data = dat_exp_3_rt)
+
+# Show
+summary(exp_rt_3)
+```
+
+### Test effects
+
+```{r exp_3_10}
+# Test effects
+exp_rt_3_comp <- Anova(exp_rt_3, test = "Chi", type = "III")
+
+# Show
+exp_rt_3_comp
+```
+
+### Get means: Variability x Similarity x Word type interaction
+
+```{r exp_3_11}
+# Get means
+exp_rt_3_means_3 <- emmeans(exp_rt_3, ~ cond_var*cond_sim*type)
+
+# Show
+exp_rt_3_means_3 %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Variability x Similarity x Word type interaction
+
+```{r exp_3_12}
+# Contrasts by Variability
+exp_rt_3_cont_var <- pairs(exp_rt_3_means_3, 
+                             by = c("type", "cond_var"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_3_cont_var
+
+# Contrasts by Similarity
+exp_rt_3_cont_sim <- pairs(exp_rt_3_means_3, 
+                             by = c("type", "cond_sim"), 
+                             adj = "hommel")
+
+# Show
+exp_rt_3_cont_sim
+```
+
+## Test 1: Accuracy
+
+### Filter, factor, and scale variables
+
+```{r test_3_1}
+# Filter and factor
+dat_test_3 <- dat_test_filt %>%
+  dplyr::filter(version %in% c("2a", "2b")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_3$cond_exp_fac) <- contrast_train
+contrasts(dat_test_3$match_type) <- contrast_match_2
+```
+
+### Run model
+
+```{r test_3_2, cache = TRUE}
+# Run
+test_acc_3_train <- glmer(resp_acc ~ cond_exp_fac*match_type + 
+                            trial_cent + freq_prime_cent:freq_target_cent + 
+                            vot_cent +
+                            (1|prime:target) + (1|participant),
+                          data = dat_test_3,
+                          family = binomial,
+                          control = glmerControl(optimizer = "bobyqa"))
+
+# Show
+summary(test_acc_3_train)
+```
+
+### Test effects
+
+```{r test_3_3}
+# Test effects
+test_acc_3_train_comp <- Anova(test_acc_3_train, test = "Chi", type = "III")
+
+# Show
+test_acc_3_train_comp
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_3_4}
+# Get means
+test_acc_3_train_means <- emmeans(test_acc_3_train, ~ cond_exp_fac*match_type)
+
+# Show
+test_acc_3_train_means %>% summary(type = "response")
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_3_5}
+# Select contrasts for Test-only group
+test_acc_3_train_coef <- emmeans:::pairwise.emmc(levels(test_acc_3_train_means)$cond_exp_fac)
+test_acc_3_train_coef_1 <- test_acc_3_train_coef[c(1:4)]
+
+# Run contrasts
+test_acc_3_train_cont_1 <- contrast(test_acc_3_train_means, 
+                                  test_acc_3_train_coef_1, 
+                                  by = "match_type", 
+                                  adj = "hommel")
+
+# Show
+test_acc_3_train_cont_1
+
+# Select contrasts without Test-only group
+test_acc_3_train_coef_2 <- test_acc_3_train_coef[c(5:10)]
+
+# Run contrasts
+test_acc_3_train_cont_2 <- contrast(test_acc_3_train_means, 
+                                  test_acc_3_train_coef_2, 
+                                  by = "match_type", 
+                                  adj = "hommel")
+
+# Show
+test_acc_3_train_cont_2
+```
+
+## Test 1: RT
+
+### Filter, factor, and scale variables
+
+```{r test_3_6}
+# Filter and factor
+dat_test_3_rt <- dat_test_rt %>%
+  dplyr::filter(version %in% c("2a", "2b")) %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1]) %>%
+  left_join(tab_exp, by = "cond_exp")
+
+# Add contrasts
+contrasts(dat_test_3_rt$cond_exp_fac) <- contrast_train
+contrasts(dat_test_3_rt$match_type) <- contrast_match_2
+```
+
+### Run model
+
+```{r test_3_7, cache = TRUE}
+# Run
+test_rt_3_train <- lmer(inv_rt ~ cond_exp_fac*match_type + 
+                          trial_cent + freq_prime_cent:freq_target_cent + 
+                          vot_cent +
+                          (1|prime:target) + (1|participant),
+                        data = dat_test_3_rt)
+
+# Show
+summary(test_rt_3_train)
+```
+
+### Test effects
+
+```{r test_3_8}
+# Test effects
+test_rt_3_train_comp <- Anova(test_rt_3_train, test = "Chi", type = "III")
+
+# Show
+test_rt_3_train_comp
+```
+
+### Get means: Exposure x Target type interaction
+
+```{r test_3_9}
+# Get means
+test_rt_3_train_means <- emmeans(test_rt_3_train, ~ cond_exp_fac*match_type)
+
+# Show
+test_rt_3_train_means %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Exposure x Target type interaction
+
+```{r test_3_10}
+# Select contrasts for Test-only group
+test_rt_3_train_coef <- emmeans:::pairwise.emmc(levels(test_rt_3_train_means)$cond_exp_fac)
+test_rt_3_train_coef <- test_rt_3_train_coef[c(1:4)]
+
+# Run contrasts
+test_rt_3_train_cont <- contrast(test_rt_3_train_means, 
+                                 test_rt_3_train_coef, 
+                                 by = "match_type", 
+                                 adj = "hommel")
+
+# Show
+test_rt_3_train_cont
+```
+
+## Test 2: RT
+
+### Filter, factor, and scale variables
+
+```{r test_3_11}
+# Filter and factor
+dat_test_3_rt_exp <- dat_test_rt %>%
+  dplyr::filter(version == "2a") %>%
+  mutate(across(.cols = c("participant", "prime", "target", "match_type",
+                          "cond_sim", "cond_var"),
+                as.factor),
+         trial_cent = scale(trial)[,1],
+         vot_cent = scale(vot)[,1],
+         freq_prime_cent = scale(FreqZipfUS_prime)[,1],
+         freq_target_cent = scale(FreqZipfUS_target)[,1])
+
+# Add contrasts
+contrasts(dat_test_3_rt_exp$cond_sim) <- contrast_sim
+contrasts(dat_test_3_rt_exp$cond_var) <- contrast_var
+contrasts(dat_test_3_rt_exp$match_type) <- contrast_match_2
+```
+
+### Run model
+
+```{r test_3_12, cache = TRUE}
+# Run
+test_rt_3_exp <- lmer(inv_rt ~ cond_sim*cond_var*match_type + 
+                     trial_cent + freq_prime_cent:freq_target_cent + 
+                     vot_cent +
+                     (1|prime:target) + (1|participant),
+                   data = dat_test_3_rt_exp)
+
+# Show
+summary(test_rt_3_exp)
+```
+
+### Test effects
+
+```{r test_3_13}
+# Test effects
+test_rt_3_comp_exp <- Anova(test_rt_3_exp, test = "Chi", type = "III")
+
+# Show
+test_rt_3_comp_exp
+```
+
+### Get means: Two-way interactions with Target type
+
+```{r test_3_14}
+# Get means
+test_rt_3_means_exp_var_2 <- emmeans(test_rt_3_exp, ~ cond_var*match_type)
+
+# Show
+test_rt_3_means_exp_var_2 %>% apa_rt() %>% select(-report)
+
+# Get means
+test_rt_3_means_exp_sim_2 <- emmeans(test_rt_3_exp, ~ cond_sim*match_type)
+
+# Show
+test_rt_3_means_exp_sim_2 %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Two-way interactions with Target type
+
+```{r test_3_15}
+# Run contrasts
+test_rt_3_cont_exp_var_2 <- pairs(test_rt_3_means_exp_var_2,
+                             by = "match_type", 
+                             adj = "hommel")
+
+# Show
+test_rt_3_cont_exp_var_2
+
+# Run contrasts
+test_rt_3_cont_exp_sim_2 <- pairs(test_rt_3_means_exp_sim_2, 
+                             by = "match_type", 
+                             adj = "hommel")
+
+# Show
+test_rt_3_cont_exp_sim_2
+```
+
+### Get means: Variability x Similarity x Target type interaction
+
+```{r test_3_16}
+# Get means
+test_rt_3_means_exp_3 <- emmeans(test_rt_3_exp, ~ cond_var*cond_sim*match_type)
+
+# Show
+test_rt_3_means_exp_3 %>% apa_rt() %>% select(-report)
+```
+
+### Compare means: Variability x Similarity x Target type interaction
+
+```{r test_3_17}
+# Run contrasts in Variability
+test_rt_3_cont_exp_var_3 <- pairs(test_rt_3_means_exp_3,
+                                  by = c("match_type", "cond_var"), 
+                                  adj = "hommel")
+
+# Show
+test_rt_3_cont_exp_var_3
+
+# Run contrasts in Similarity
+test_rt_3_cont_exp_sim_3 <- pairs(test_rt_3_means_exp_3,
+                                  by = c("match_type", "cond_sim"), 
+                                  adj = "hommel")
+
+# Show
+test_rt_3_cont_exp_sim_3
+```
+
