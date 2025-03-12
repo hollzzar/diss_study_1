@@ -5,7 +5,7 @@ Previous research has shown that perceptual adaptation to particular cue-categor
 In addition, the benefits of exposure to an L2 accent can transfer to a new talker with the same accent (Alexander & Nygaard, 2019;
 Sidaras et al., 2009; Tzeng et al., 2016; Xie et al., 2018).
 However, there is disagreement in the literature about the conditions under which adaptation generalizes across talkers (Baese-Berk et al., 2013; Bradlow et al., 2023; Bradlow & Bent, 2008; Xie et al., 2021; Xie & Myers, 2017).
-Two different factors have been argued to facilitate generalization: (1) variability during exposure (Baese-Berk et al., 2013; Bradlow and Bent, 2008) and (2) similarity between the exposure and test talkers (Xie and Myers, 2017; Xie et al., 2021).
+Two different factors have been argued to facilitate generalization: (1) variability during exposure (Baese-Berk et al., 2013; Bradlow & Bent, 2008) and (2) similarity between the exposure and test talkers (Xie & Myers, 2017; Xie et al., 2021).
 The present study features three experiments that directly compare variability and similarity during exposure to Spanish-accented English.
 The overarching goal is to understand how listeners use acoustic-phonetic information to accommodate linguistic variation.
 
