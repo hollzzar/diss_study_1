@@ -11,4 +11,4 @@ The overarching goal is to understand how listeners use acoustic-phonetic inform
 
 This repository contains the data and analyses from all three experiments.
 You can view the full model outputs by clicking [this link](https://www.hzaharchuk.com/diss_study_1/adaptation_analyses.html).
-You can also find the full list of experimental stimuli and the post-experiment questionnaire.
+You can also find the full list of experimental stimuli and post-experiment questionnaire items.
