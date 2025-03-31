@@ -9,6 +9,6 @@ Two different factors have been argued to facilitate generalization: (1) variabi
 The present study features three experiments that directly compare variability and similarity during exposure to Spanish-accented English.
 The overarching goal is to understand how listeners use acoustic-phonetic information to accommodate linguistic variation.
 
-This repository contains a markdown with the full model outputs from all three experiments.
-You can view the html output by clicking [this link](https://www.hzaharchuk.com/diss_study_1/adaptation_analyses.html).
-Eventually, it will also contain the pre-print of the manuscript once it is accepted for publication, as well as the code used to generate the manuscript with R Markdown.
+This repository contains the data and analyses from all three experiments.
+You can view the full model outputs by clicking [this link](https://www.hzaharchuk.com/diss_study_1/adaptation_analyses.html).
+You can also find the full list of experimental stimuli and the post-experiment questionnaire.
